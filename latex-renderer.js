@@ -1,4 +1,5 @@
 // latex-renderer.js
+// h
 (function() {
   // Create a loading message
   const loadingMessage = document.createElement('div');
