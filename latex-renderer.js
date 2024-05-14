@@ -1,5 +1,4 @@
 // latex-renderer.js
-
 (function() {
   // Create a loading message
   const loadingMessage = document.createElement('div');
@@ -20,6 +19,15 @@
   script.async = true;
   document.head.appendChild(script);
 
+  // Debounce function to limit the rate of function calls
+  function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
+
   script.onload = () => {
     // Remove the loading message
     document.body.removeChild(loadingMessage);
@@ -35,31 +43,25 @@
       },
       startup: {
         typeset: false,
-        ready: MathJax.startup.defaultReady
+        ready: () => {
+          MathJax.startup.defaultReady();
+          if (localStorage.getItem('latexExtensionActive') === 'true') {
+            observeMessages();
+          }
+        }
       }
     };
 
     // Process message for LaTeX
     function processMessage(node) {
-      const latexRegex = /(\$[^$]+\$|\\\([^\)]+\\\)|\\\[[^\]]+\\\])/g;
-      let messageHTML = node.innerHTML;
-      messageHTML = messageHTML.replace(latexRegex, (match) => `<span class="latex">${match}</span>`);
-      node.innerHTML = messageHTML;
       MathJax.typesetPromise([node]).catch(console.error);
     }
 
-    // Debounce function to limit the rate of function calls
-    function debounce(func, wait) {
-      let timeout;
-      return function(...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-      };
-    }
+    // Debounced processing function
+    const debouncedProcessMessage = debounce(processMessage, 300);
 
     // Observe new messages for LaTeX processing
     let observer;
-    const debouncedProcessMessage = debounce(processMessage, 300);
 
     function observeMessages() {
       const chatContainer = document.querySelector('[data-element-id="chat-space-end-part"]');
@@ -108,9 +110,5 @@
     }
 
     createToggleButton();
-    if (localStorage.getItem('latexExtensionActive') === 'true') {
-      observeMessages();
-    }
   };
 })();
-
