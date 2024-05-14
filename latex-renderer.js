@@ -15,20 +15,26 @@
         inlineMath: [['$', '$'], ['\\(', '\\)']],
         displayMath: [['$$', '$$'], ['\\[', '\\]']],
         processEscapes: true,
-        processEnvironments: true
+        processEnvironments: true,
+        packages: {'[+]': ['ams']}
       },
       startup: {
-        typeset: false
+        typeset: false,
+        ready: () => {
+          MathJax.startup.defaultReady();
+          // Observer initialization
+          observeMessages();
+        }
       }
     };
 
     // Function to process messages for LaTeX
     function processMessage(messageElement) {
-      const latexRegex = /\$\$(.*?)\$\$/gs; 
+      const latexRegex = /(\$[^$]+\$|\\\([^\)]+\\\)|\\\[[^\]]+\\\])/g;
       let messageHTML = messageElement.innerHTML;
 
-      messageHTML = messageHTML.replace(latexRegex, (match, latexCode) => {
-        return `<span class="latex">${latexCode}</span>`;
+      messageHTML = messageHTML.replace(latexRegex, (match) => {
+        return `<span class="latex">${match}</span>`;
       });
 
       messageElement.innerHTML = messageHTML;
@@ -38,6 +44,11 @@
     // Function to observe and modify messages
     function observeMessages() {
       const messageContainer = document.querySelector('[data-element-id="chat-messages-container"]');
+
+      if (!messageContainer) {
+        console.error('Message container not found.');
+        return;
+      }
 
       const observer = new MutationObserver(mutations => {
         mutations.forEach(mutation => {
@@ -56,8 +67,5 @@
 
       observer.observe(messageContainer, { childList: true, subtree: true });
     }
-
-    // Initialize the extension
-    observeMessages();
   };
 })();
